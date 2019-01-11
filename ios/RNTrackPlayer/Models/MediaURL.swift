@@ -7,9 +7,11 @@
 //
 
 import Foundation
+import AVFoundation
 
 struct MediaURL {
     let value: URL
+    var headers: NSDictionary?
     let isLocal: Bool
     private let originalObject: Any
     
@@ -18,10 +20,20 @@ struct MediaURL {
         originalObject = object
         
         if let localObject = object as? [String: Any] {
-            isLocal = true
             let uri = localObject["uri"] as! String
-            let encodedURI = uri.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
-            value = URL(string: encodedURI)!
+            isLocal = uri.lowercased().hasPrefix("file://")
+            
+            if (!isLocal) {
+                value = URL(string: uri)!
+                if (localObject["headers"] != nil) {
+                    headers = localObject["headers"] as! NSDictionary;
+                }
+                
+            } else {
+                let encodedURI = uri.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+                value = URL(string: encodedURI)!
+            }
+            
         } else {
             let url = object as! String
             isLocal = url.lowercased().hasPrefix("file://")

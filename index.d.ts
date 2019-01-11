@@ -49,9 +49,16 @@ declare namespace RNTrackPlayer {
 
   // Player Queue Commands
 
+type TrackRessource = string | number;
+
   export interface Track {
     id: string;
-    url: string|number;
+    url: TrackRessource | {
+      uri: TrackRessource,
+      headers?: {
+        [key: string]: string;
+      }
+    };
     type?: string;
     contentType?: string;
     duration?: number;

@@ -105,8 +105,17 @@ public class AudioPlayer: NSObject {
                 // Reset special state flags
                 pausedForInterruption = false
                 
+                var options: [String: Any] = [:];
+               
+                if (currentItem.url.headers != nil) {
+                    let headers = currentItem.url.headers as? [String: Any]
+                    options = ["AVURLAssetHTTPHeaderFieldsKey": headers]
+                }
+                
+                let asset = AVURLAsset(url: currentItem.url.value, options: options)
+                
                 // Create new AVPlayerItem
-                let playerItem = AVPlayerItem(url: currentItem.url.value)
+                let playerItem = AVPlayerItem(asset: asset);
                 
                 if #available(iOS 10.0, tvOS 10.0, OSX 10.12, *) {
                     playerItem.preferredForwardBufferDuration = self.preferredForwardBufferDuration
