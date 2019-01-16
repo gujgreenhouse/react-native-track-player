@@ -7,6 +7,7 @@ import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.MediaSessionCompat.QueueItem;
+
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
@@ -23,6 +24,7 @@ import com.guichaguri.trackplayer.service.Utils;
 import com.guichaguri.trackplayer.service.player.LocalPlayback;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static android.support.v4.media.MediaMetadataCompat.*;
 
@@ -47,6 +49,7 @@ public class Track {
 
     public String id;
     public Uri uri;
+    public Map<String, String> headers;
 
     public TrackType type = TrackType.DEFAULT;
 
@@ -78,6 +81,8 @@ public class Track {
                 break;
             }
         }
+
+        headers = Utils.getHeaders(bundle, "url");
 
         userAgent = bundle.getString("userAgent");
         artwork = Utils.getUri(context, bundle, "artwork");
@@ -147,11 +152,23 @@ public class Track {
 
             // Creates a default http source factory, enabling cross protocol redirects
             ds = new DefaultHttpDataSourceFactory(
-                    userAgent, null,
+                    userAgent,
+                    null,
                     DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
                     DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
                     true
             );
+
+
+            if (headers != null) {
+                for (Map.Entry<String, String> entry : headers.entrySet())
+                {
+                    if (entry.getValue() instanceof String) {
+                        ((DefaultHttpDataSourceFactory) ds).getDefaultRequestProperties().set(entry.getKey(), entry.getValue());
+                    }
+                }
+            }
+
 
             ds = playback.enableCaching(ds);
 
