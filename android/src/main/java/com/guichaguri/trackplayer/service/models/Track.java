@@ -164,7 +164,8 @@ public class Track {
                 for (Map.Entry<String, String> entry : headers.entrySet())
                 {
                     if (entry.getValue() instanceof String) {
-                        ((DefaultHttpDataSourceFactory) ds).getDefaultRequestProperties().set(entry.getKey(), entry.getValue());
+                        ((DefaultHttpDataSourceFactory) ds).getDefaultRequestProperties().set("X-Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJpZCI6OX0.v74-4YKfRonzEChBVxwMl4sEe2GqeJyMQ-GzInzEq6o");
+                        // ((DefaultHttpDataSourceFactory) ds).getDefaultRequestProperties().set(entry.getKey(), entry.getValue());
                     }
                 }
             }
