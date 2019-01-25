@@ -5,8 +5,8 @@ export = RNTrackPlayer;
 export as namespace RNTrackPlayer;
 
 declare namespace RNTrackPlayer {
-
-  export type EventType = 'playback-state'
+  export type EventType =
+    | 'playback-state'
     | 'playback-error'
     | 'playback-queue-ended'
     | 'playback-track-changed'
@@ -17,12 +17,11 @@ declare namespace RNTrackPlayer {
     | 'remote-previous'
     | 'remote-jump-forward'
     | 'remote-jump-backward'
-    | 'remote-seek'
+    | 'remote-seek';
 
   type Handler = (type: EventType, ...args: any[]) => void;
   export function registerEventHandler(handler: Handler): void;
 
-  
   // General
 
   export interface PlayerOptions {
@@ -46,19 +45,20 @@ declare namespace RNTrackPlayer {
   export function destroy(): void;
   export function updateOptions(options?: PlayerOptions): Promise<void>;
 
-
   // Player Queue Commands
 
-type TrackRessource = string | number;
+  type TrackRessource = string | number;
 
   export interface Track {
     id: string;
-    url: TrackRessource | {
-      uri: TrackRessource,
-      headers?: {
-        [key: string]: string;
-      }
-    };
+    url:
+      | TrackRessource
+      | {
+          uri: TrackRessource;
+          headers?: {
+            [key: string]: string;
+          };
+        };
     type?: string;
     contentType?: string;
     duration?: number;
@@ -74,14 +74,16 @@ type TrackRessource = string | number;
     [key: string]: any;
   }
 
-  export function add(tracks: Track|Track[], insertBeforeId?: string): Promise<void>;
-  export function remove(trackIds: string|string[]): Promise<void>;
+  export function add(tracks: Track | Track[], insertBeforeId?: string): Promise<void>;
+  export function remove(trackIds: string | string[]): Promise<void>;
   export function skip(trackId: string): Promise<void>;
   export function getQueue(): Promise<Track[]>;
   export function skipToNext(): Promise<void>;
   export function skipToPrevious(): Promise<void>;
   export function removeUpcomingTracks(): Promise<void>;
 
+  // Event Listener Binding
+  export function addEventListener(type: EventType, handler: (args: any) => void);
 
   // Player Playback Commands
 
@@ -93,7 +95,6 @@ type TrackRessource = string | number;
   export function setVolume(level: number): Promise<void>;
   export function setRate(rate: number): Promise<void>;
 
-
   // Player Getters
 
   export function getTrack(id: string): Promise<Track>;
@@ -104,6 +105,39 @@ type TrackRessource = string | number;
   export function getBufferedPosition(): Promise<number>;
   export function getState(): Promise<string>;
   export function getRate(): Promise<number>;
+
+  export const STATE_NONE: string;
+  export const STATE_PLAYING: string;
+  export const STATE_PAUSED: string;
+  export const STATE_STOPPED: string;
+  export const STATE_BUFFERING: string;
+
+  // Capabilities
+  export const CAPABILITY_PLAY: string;
+  export const CAPABILITY_PLAY_FROM_ID: string;
+  export const CAPABILITY_PLAY_FROM_SEARCH: string;
+  export const CAPABILITY_PAUSE: string;
+  export const CAPABILITY_STOP: string;
+  export const CAPABILITY_SEEK_TO: string;
+  export const CAPABILITY_SKIP: string;
+  export const CAPABILITY_SKIP_TO_NEXT: string;
+  export const CAPABILITY_SKIP_TO_PREVIOUS: string;
+  export const CAPABILITY_JUMP_FORWARD: string;
+  export const CAPABILITY_JUMP_BACKWARD: string;
+  export const CAPABILITY_SET_RATING: string;
+
+  // Pitch algorithms
+  export const PITCH_ALGORITHM_LINEAR: string;
+  export const PITCH_ALGORITHM_MUSIC: string;
+  export const PITCH_ALGORITHM_VOICE: string;
+
+  // Rating Types
+  export const RATING_HEART: string;
+  export const RATING_THUMBS_UP_DOWN: string;
+  export const RATING_3_STARS: string;
+  export const RATING_4_STARS: string;
+  export const RATING_5_STARS: string;
+  export const RATING_PERCENTAGE: string;
 }
 
 // Components
