@@ -7,10 +7,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+
 import com.facebook.react.bridge.Promise;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.facebook.react.views.imagehelper.ResourceDrawableIdHelper;
-import java.util.Map;
 
 /**
  * @author Guichaguri
@@ -91,20 +90,13 @@ public class Utils {
         return null;
     }
 
-    public static Map getHeaders(Bundle data, String key) {
+    public static Bundle getHeaders(Bundle data, String key) {
         if(!data.containsKey(key)) return null;
         Object obj = data.get(key);
 
         if(obj instanceof Bundle) {
             try {
-                Object headers = ((Bundle)obj).get("headers");
-
-                if (headers != null) {
-                    ObjectMapper oMapper = new ObjectMapper();
-
-                    Map<String, String> map = oMapper.convertValue(headers, Map.class);
-                    return map;
-                }
+                return ((Bundle)obj).getBundle("headers");
             } catch (Error e) {
                 throw new RuntimeException("The Headers are invalid");
             }

@@ -7,6 +7,7 @@ import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.MediaSessionCompat.QueueItem;
+import android.util.Log;
 
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
@@ -49,7 +50,7 @@ public class Track {
 
     public String id;
     public Uri uri;
-    public Map<String, String> headers;
+    public Bundle headers;
 
     public TrackType type = TrackType.DEFAULT;
 
@@ -159,15 +160,15 @@ public class Track {
                     true
             );
 
-
             if (headers != null) {
-                for (Map.Entry<String, String> entry : headers.entrySet())
-                {
-                    if (entry.getValue() instanceof String) {
-                        ((DefaultHttpDataSourceFactory) ds).getDefaultRequestProperties().set("X-Authorization", "Bearer eyJhbGciOiJIUzI1NiJ9.eyJpZCI6OX0.v74-4YKfRonzEChBVxwMl4sEe2GqeJyMQ-GzInzEq6o");
-                        // ((DefaultHttpDataSourceFactory) ds).getDefaultRequestProperties().set(entry.getKey(), entry.getValue());
-                    }
+
+                for (String key : headers.keySet()) {
+                    ((DefaultHttpDataSourceFactory) ds)
+                            .getDefaultRequestProperties()
+                            .set(key, headers.get(key).toString());
+
                 }
+
             }
 
 
