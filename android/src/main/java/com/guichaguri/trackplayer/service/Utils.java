@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.views.imagehelper.ResourceDrawableIdHelper;
 import com.google.android.exoplayer2.upstream.RawResourceDataSource;
@@ -84,6 +85,22 @@ public class Utils {
             } else {
                 // During development, the resources might come directly from the metro server
                 return Uri.parse(uri);
+            }
+
+        }
+
+        return null;
+    }
+
+    public static Bundle getHeaders(Bundle data, String key) {
+        if(!data.containsKey(key)) return null;
+        Object obj = data.get(key);
+
+        if(obj instanceof Bundle) {
+            try {
+                return ((Bundle)obj).getBundle("headers");
+            } catch (Error e) {
+                throw new RuntimeException("The Headers are invalid");
             }
 
         }

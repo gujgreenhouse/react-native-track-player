@@ -7,7 +7,10 @@ import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.MediaSessionCompat.QueueItem;
+import android.util.Log;
+
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
+import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
@@ -22,6 +25,7 @@ import com.guichaguri.trackplayer.service.player.LocalPlayback;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static android.support.v4.media.MediaMetadataCompat.*;
 
@@ -47,9 +51,11 @@ public class Track {
     public String id;
     public Uri uri;
     public int resourceId;
+    public Bundle headers;
 
     public TrackType type = TrackType.DEFAULT;
 
+    public String contentType;
     public String userAgent;
 
     public Uri artwork;
@@ -86,6 +92,8 @@ public class Track {
             }
         }
 
+        contentType = bundle.getString("contentType");
+        headers = Utils.getHeaders(bundle, "url");
         userAgent = bundle.getString("userAgent");
         artwork = Utils.getUri(context, bundle, "artwork");
 
@@ -140,7 +148,7 @@ public class Track {
 
     public MediaSource toMediaSource(Context ctx, LocalPlayback playback) {
         // Updates the user agent if not set
-        if(userAgent == null || !userAgent.isEmpty())
+        if(userAgent == null || userAgent.isEmpty())
             userAgent = Util.getUserAgent(ctx, "react-native-track-player");
 
         DataSource.Factory ds;
@@ -170,11 +178,24 @@ public class Track {
 
             // Creates a default http source factory, enabling cross protocol redirects
             ds = new DefaultHttpDataSourceFactory(
-                    userAgent, null,
+                    userAgent,
+                    null,
                     DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
                     DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
                     true
             );
+
+            if (headers != null) {
+
+                for (String key : headers.keySet()) {
+                    ((DefaultHttpDataSourceFactory) ds)
+                            .getDefaultRequestProperties()
+                            .set(key, headers.get(key).toString());
+
+                }
+
+            }
+
 
             ds = playback.enableCaching(ds);
 
@@ -192,6 +213,7 @@ public class Track {
                         .createMediaSource(uri);
             default:
                 return new ExtractorMediaSource.Factory(ds)
+                        .setExtractorsFactory(new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true))
                         .createMediaSource(uri);
         }
     }
