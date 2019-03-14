@@ -10,6 +10,7 @@ import android.support.v4.media.session.PlaybackStateCompat;
 
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.views.imagehelper.ResourceDrawableIdHelper;
+import com.google.android.exoplayer2.upstream.RawResourceDataSource;
 
 /**
  * @author Guichaguri
@@ -43,6 +44,7 @@ public class Utils {
                 scheme.equals(ContentResolver.SCHEME_FILE) ||
                 scheme.equals(ContentResolver.SCHEME_ANDROID_RESOURCE) ||
                 scheme.equals(ContentResolver.SCHEME_CONTENT) ||
+                scheme.equals(RawResourceDataSource.RAW_RESOURCE_SCHEME) ||
                 scheme.equals("res") ||
                 host == null ||
                 host.equals("localhost") ||
@@ -104,6 +106,23 @@ public class Utils {
         }
 
         return null;
+    }
+
+    public static int getRawResourceId(Context context, Bundle data, String key) {
+        if(!data.containsKey(key)) return 0;
+        Object obj = data.get(key);
+
+        if(!(obj instanceof Bundle)) return 0;
+        String name = ((Bundle)obj).getString("uri");
+
+        if(name == null || name.isEmpty()) return 0;
+        name = name.toLowerCase().replace("-", "_");
+
+        try {
+            return Integer.parseInt(name);
+        } catch (NumberFormatException ex) {
+            return context.getResources().getIdentifier(name, "raw", context.getPackageName());
+        }
     }
 
     public static boolean isPlaying(int state) {

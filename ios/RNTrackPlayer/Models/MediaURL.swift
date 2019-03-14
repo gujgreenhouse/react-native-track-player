@@ -21,23 +21,19 @@ struct MediaURL {
         
         if let localObject = object as? [String: Any] {
             let uri = localObject["uri"] as! String
-            isLocal = uri.lowercased().hasPrefix("file://")
-            
-            if (!isLocal) {
-                value = URL(string: uri)!
-                if (localObject["headers"] != nil) {
-                    headers = localObject["headers"] as! NSDictionary;
-                }
-                
-            } else {
-                let encodedURI = uri.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
-                value = URL(string: encodedURI)!
+            isLocal = uri.contains("http") ? false : true
+
+            value = URL(string: uri)!
+            if (localObject["headers"] != nil) {
+                headers = localObject["headers"] as! NSDictionary;
             }
-            
+
+            let encodedURI = uri.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
+            value = URL(string: encodedURI.replacingOccurrences(of: "file://", with: ""))!
         } else {
             let url = object as! String
             isLocal = url.lowercased().hasPrefix("file://")
-            value = URL(string: url)!
+            value = URL(string: url.replacingOccurrences(of: "file://", with: ""))!
         }
     }
 }
