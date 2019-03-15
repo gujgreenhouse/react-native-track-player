@@ -208,6 +208,8 @@ public abstract class ExoPlayback<T extends Player> implements EventListener {
                 if (lastKnownWindow >= player.getCurrentTimeline().getWindowCount()) return;
                 long duration = player.getCurrentTimeline().getWindow(lastKnownWindow, new Window()).getDurationMs();
                 if(duration != C.TIME_UNSET) lastKnownPosition = duration;
+
+                manager.onTrackEnded();
             }
 
             manager.onTrackUpdate(previous, lastKnownPosition, next);
