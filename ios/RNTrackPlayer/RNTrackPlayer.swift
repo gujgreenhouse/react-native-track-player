@@ -35,6 +35,13 @@ public class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
         ])
     }
     
+    public func playerTrackEnded(trackId: String?) {
+        guard !isTesting else { return }
+        sendEvent(withName: "playback-track-ended", body: [
+            "track": trackId
+            ])
+    }
+    
     public func playerExhaustedQueue(trackId: String?, time: TimeInterval?) {
         guard !isTesting else { return }
         sendEvent(withName: "playback-queue-ended", body: [
@@ -99,8 +106,8 @@ public class RNTrackPlayer: RCTEventEmitter, MediaWrapperDelegate {
             "playback-queue-ended",
             "playback-state",
             "playback-error",
+            "playback-track-ended",
             "playback-track-changed",
-            
             "remote-stop",
             "remote-pause",
             "remote-play",
