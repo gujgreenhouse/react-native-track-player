@@ -1,23 +1,24 @@
-import { Component } from 'react';
-import { NativeModules } from 'react-native';
+import { Component } from "react";
+import { NativeModules } from "react-native";
 
 export = RNTrackPlayer;
 export as namespace RNTrackPlayer;
 
 declare namespace RNTrackPlayer {
   export type EventType =
-    | 'playback-state'
-    | 'playback-error'
-    | 'playback-queue-ended'
-    | 'playback-track-changed'
-    | 'remote-play'
-    | 'remote-pause'
-    | 'remote-stop'
-    | 'remote-next'
-    | 'remote-previous'
-    | 'remote-jump-forward'
-    | 'remote-jump-backward'
-    | 'remote-seek';
+    | "playback-state"
+    | "playback-error"
+    | "playback-track-ended"
+    | "playback-queue-ended"
+    | "playback-track-changed"
+    | "remote-play"
+    | "remote-pause"
+    | "remote-stop"
+    | "remote-next"
+    | "remote-previous"
+    | "remote-jump-forward"
+    | "remote-jump-backward"
+    | "remote-seek";
 
   type Handler = (type: EventType, ...args: any[]) => void;
   export function registerEventHandler(handler: Handler): void;

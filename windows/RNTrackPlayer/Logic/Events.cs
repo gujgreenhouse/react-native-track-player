@@ -17,6 +17,7 @@ namespace TrackPlayer.Logic {
 
         public const string PlaybackState = "playback-state";
         public const string PlaybackTrackChanged = "playback-track-changed";
+        public const string PlaybackTrackEnded = "playback-track-ended";
         public const string PlaybackQueueEnded = "playback-queue-ended";
         public const string PlaybackError = "playback-error";
     }
