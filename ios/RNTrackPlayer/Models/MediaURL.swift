@@ -10,6 +10,7 @@ import Foundation
 
 struct MediaURL {
     let value: URL
+    var headers: NSDictionary?
     let isLocal: Bool
     private let originalObject: Any
     
@@ -20,6 +21,11 @@ struct MediaURL {
         if let localObject = object as? [String: Any] {
             let uri = localObject["uri"] as! String
             isLocal = uri.contains("http") ? false : true
+            
+            if (localObject["headers"] != nil) {
+                headers = localObject["headers"] as! NSDictionary;
+            }
+            
             let encodedURI = uri.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed)!
             value = URL(string: encodedURI.replacingOccurrences(of: "file://", with: ""))!
         } else {

@@ -1,13 +1,13 @@
-import { Component } from 'react';
+import { Component } from "react";
 
 export = RNTrackPlayer;
 
 declare namespace RNTrackPlayer {
-
   export type EventType =
     | "playback-state"
     | "playback-error"
     | "playback-queue-ended"
+    | "playback-track-ended"
     | "playback-track-changed"
     | "remote-play"
     | "remote-play-id"
@@ -23,13 +23,16 @@ declare namespace RNTrackPlayer {
     | "remote-set-rating"
     | "remote-duck";
 
-  export type TrackType =
-    | "default"
-    | "dash"
-    | "hls"
-    | "smoothstreaming";
+  export type TrackType = "default" | "dash" | "hls" | "smoothstreaming";
 
   type ResourceObject = any;
+
+  interface TrackResourceObject {
+    uri: string | number;
+    headers?: {
+      [key: string]: string;
+    };
+  }
 
   type State = string | number;
   type RatingType = string | number;
@@ -40,14 +43,19 @@ declare namespace RNTrackPlayer {
   export function registerEventHandler(handler: EventHandler): void;
 
   type ServiceHandler = () => Promise<void>;
-  export function registerPlaybackService(serviceFactory: () => ServiceHandler): void;
+  export function registerPlaybackService(
+    serviceFactory: () => ServiceHandler
+  ): void;
 
-  type EmitterSubscription = { remove: () => void; };
-  export function addEventListener(type: EventType, listener: (data: any) => void): EmitterSubscription;
+  type EmitterSubscription = { remove: () => void };
+  export function addEventListener(
+    type: EventType,
+    listener: (data: any) => void
+  ): EmitterSubscription;
 
   export interface Track {
     id: string;
-    url: string | ResourceObject;
+    url: string | TrackResourceObject;
     type?: TrackType;
     userAgent?: string;
     contentType?: string;
@@ -99,7 +107,10 @@ declare namespace RNTrackPlayer {
 
   // Player Queue Commands
 
-  export function add(tracks: Track | Track[], insertBeforeId?: string): Promise<void>;
+  export function add(
+    tracks: Track | Track[],
+    insertBeforeId?: string
+  ): Promise<void>;
   export function remove(trackIds: string | string[]): Promise<void>;
   export function skip(trackId: string): Promise<void>;
   export function skipToNext(): Promise<void>;
@@ -136,7 +147,10 @@ declare namespace RNTrackPlayer {
     duration: number;
   }
 
-  export class ProgressComponent<P = {}, S = {}> extends Component<P, ProgressComponentState & S> {
+  export class ProgressComponent<P = {}, S = {}> extends Component<
+    P,
+    ProgressComponentState & S
+  > {
     public getProgress: () => number;
     public getBufferedProgress: () => number;
   }
@@ -148,7 +162,7 @@ declare namespace RNTrackPlayer {
   export const STATE_PAUSED: State;
   export const STATE_STOPPED: State;
   export const STATE_BUFFERING: State;
-  
+
   export const RATING_HEART: RatingType;
   export const RATING_THUMBS_UP_DOWN: RatingType;
   export const RATING_3_STARS: RatingType;
@@ -172,5 +186,4 @@ declare namespace RNTrackPlayer {
   export const PITCH_ALGORITHM_LINEAR: PitchAlgorithm;
   export const PITCH_ALGORITHM_MUSIC: PitchAlgorithm;
   export const PITCH_ALGORITHM_VOICE: PitchAlgorithm;
-
 }

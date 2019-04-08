@@ -36,7 +36,7 @@ public class RNTrackPlayer: RCTEventEmitter, AudioPlayerDelegate {
                 "position": player.currentTime,
             ])
         } else if reason == .playedUntilEnd {
-            sendEvent(withName: "playback-track-changed", body: [
+            sendEvent(withName: "playback-track-ended", body: [
                 "track": (player.currentItem as? Track)?.id,
                 "position": player.currentTime,
                 "nextTrack": (player.nextItems.first as? Track)?.id,
@@ -109,6 +109,7 @@ public class RNTrackPlayer: RCTEventEmitter, AudioPlayerDelegate {
     @objc(supportedEvents)
     override public func supportedEvents() -> [String] {
         return [
+            "playback-track-ended",
             "playback-queue-ended",
             "playback-state",
             "playback-error",
@@ -322,7 +323,7 @@ public class RNTrackPlayer: RCTEventEmitter, AudioPlayerDelegate {
     
     @objc(skipToPrevious:rejecter:)
     public func skipToPrevious(resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
-        print("Skipping to next track")
+        print("Skipping to previous track")
         do {
             sendEvent(withName: "playback-track-changed", body: [
                 "track": (player.currentItem as? Track)?.id,

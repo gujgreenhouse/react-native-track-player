@@ -64,6 +64,10 @@ class Track: NSObject, AudioItem {
         return url.value.absoluteString
     }
     
+    func getSourceHeaders() -> NSDictionary? {
+        return url.headers
+    }
+    
     func getArtist() -> String? {
         return artist
     }

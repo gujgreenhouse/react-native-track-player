@@ -91,6 +91,22 @@ public class Utils {
         return null;
     }
 
+    public static Bundle getHeaders(Bundle data, String key) {
+        if(!data.containsKey(key)) return null;
+        Object obj = data.get(key);
+
+        if(obj instanceof Bundle) {
+            try {
+                return ((Bundle)obj).getBundle("headers");
+            } catch (Error e) {
+                throw new RuntimeException("The Headers are invalid");
+            }
+
+        }
+
+        return null;
+    }
+
     public static int getRawResourceId(Context context, Bundle data, String key) {
         if(!data.containsKey(key)) return 0;
         Object obj = data.get(key);

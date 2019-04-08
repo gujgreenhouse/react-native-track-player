@@ -151,13 +151,19 @@ class AVPlayerWrapper: AVPlayerWrapperProtocol {
         }
     }
 
-    func load(from url: URL, playWhenReady: Bool) {
+    func load(from url: URL, playWhenReady: Bool, headers: NSDictionary?) {
         reset(soft: true)
         _playWhenReady = playWhenReady
         _state = .loading
+        
+        var options: [String: Any] = [:];
+        
+        if (headers != nil) {
+            options = ["AVURLAssetHTTPHeaderFieldsKey": headers]
+        }
 
         // Set item
-        let currentAsset = AVURLAsset(url: url)
+        let currentAsset = AVURLAsset(url: url, options: options)
         let currentItem = AVPlayerItem(asset: currentAsset, automaticallyLoadedAssetKeys: [Constants.assetPlayableKey])
         currentItem.preferredForwardBufferDuration = bufferDuration
         avPlayer.replaceCurrentItem(with: currentItem)

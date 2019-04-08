@@ -23,6 +23,7 @@ import com.guichaguri.trackplayer.service.player.LocalPlayback;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static android.support.v4.media.MediaMetadataCompat.*;
 
@@ -47,6 +48,7 @@ public class Track {
 
     public String id;
     public Uri uri;
+    public Bundle headers;
     public int resourceId;
 
     public TrackType type = TrackType.DEFAULT;
@@ -89,6 +91,7 @@ public class Track {
         }
 
         contentType = bundle.getString("contentType");
+        headers = Utils.getHeaders(bundle, "url");
         userAgent = bundle.getString("userAgent");
         artwork = Utils.getUri(context, bundle, "artwork");
 
@@ -173,11 +176,21 @@ public class Track {
 
             // Creates a default http source factory, enabling cross protocol redirects
             ds = new DefaultHttpDataSourceFactory(
-                    userAgent, null,
+                    userAgent,
+                    null,
                     DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
                     DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
                     true
             );
+
+            if (headers != null) {
+                for (String key : headers.keySet()) {
+                    ((DefaultHttpDataSourceFactory) ds)
+                            .getDefaultRequestProperties()
+                            .set(key, headers.get(key).toString());
+
+                }
+            }
 
             ds = playback.enableCaching(ds);
 

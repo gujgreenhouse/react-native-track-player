@@ -160,13 +160,15 @@ public class AudioPlayer: AVPlayerWrapperDelegate {
         switch item.getSourceType() {
         case .stream:
             if let url = URL(string: item.getSourceUrl()) {
-                wrapper.load(from: url, playWhenReady: playWhenReady)
+                
+                let headers = item.getSourceHeaders()
+                wrapper.load(from: url, playWhenReady: playWhenReady, headers: headers)
             }
             else {
                 throw APError.LoadError.invalidSourceUrl(item.getSourceUrl())
             }
         case .file:
-            wrapper.load(from: URL(fileURLWithPath: item.getSourceUrl()), playWhenReady: playWhenReady)
+            wrapper.load(from: URL(fileURLWithPath: item.getSourceUrl()), playWhenReady: playWhenReady, headers: item.getSourceHeaders())
         }
         
         if let item = item as? TimePitching {
