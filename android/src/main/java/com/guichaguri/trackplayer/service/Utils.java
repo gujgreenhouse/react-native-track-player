@@ -7,7 +7,6 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
-
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.views.imagehelper.ResourceDrawableIdHelper;
 import com.google.android.exoplayer2.upstream.RawResourceDataSource;
@@ -92,22 +91,6 @@ public class Utils {
         return null;
     }
 
-    public static Bundle getHeaders(Bundle data, String key) {
-        if(!data.containsKey(key)) return null;
-        Object obj = data.get(key);
-
-        if(obj instanceof Bundle) {
-            try {
-                return ((Bundle)obj).getBundle("headers");
-            } catch (Error e) {
-                throw new RuntimeException("The Headers are invalid");
-            }
-
-        }
-
-        return null;
-    }
-
     public static int getRawResourceId(Context context, Bundle data, String key) {
         if(!data.containsKey(key)) return 0;
         Object obj = data.get(key);
@@ -130,7 +113,7 @@ public class Utils {
     }
 
     public static boolean isPaused(int state) {
-        return state == PlaybackStateCompat.STATE_PAUSED;
+        return state == PlaybackStateCompat.STATE_PAUSED || state == PlaybackStateCompat.STATE_CONNECTING;
     }
 
     public static boolean isStopped(int state) {
@@ -166,4 +149,11 @@ public class Utils {
         }
     }
 
+    public static int getInt(Bundle data, String key, int defaultValue) {
+        Object value = data.get(key);
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        return defaultValue;
+    }
 }

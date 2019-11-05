@@ -10,22 +10,6 @@ import MediaPlayer
 
 public typealias AudioPlayerState = AVPlayerWrapperState
 
-public protocol AudioPlayerDelegate: class {
-    
-    func audioPlayer(playerDidChangeState state: AudioPlayerState)
-    
-    func audioPlayer(itemPlaybackEndedWithReason reason: PlaybackEndedReason)
-    
-    func audioPlayer(secondsElapsed seconds: Double)
-    
-    func audioPlayer(failedWithError error: Error?)
-    
-    func audioPlayer(seekTo seconds: Int, didFinish: Bool)
-    
-    func audioPlayer(didUpdateDuration duration: Double)
-
-}
-
 public class AudioPlayer: AVPlayerWrapperDelegate {
     
     private var _wrapper: AVPlayerWrapperProtocol
@@ -35,9 +19,9 @@ public class AudioPlayer: AVPlayerWrapperDelegate {
         return _wrapper
     }
     
-    public let nowPlayingInfoController: NowPlayingInfoController
+    public let nowPlayingInfoController: NowPlayingInfoControllerProtocol
     public let remoteCommandController: RemoteCommandController
-    public weak var delegate: AudioPlayerDelegate?
+    public let event = EventHolder()
     
     var _currentItem: AudioItem?
     public var currentItem: AudioItem? {
@@ -75,6 +59,13 @@ public class AudioPlayer: AVPlayerWrapperDelegate {
      */
     public var duration: Double {
         return wrapper.duration
+    }
+    
+    /**
+     The bufferedPosition of the current AudioItem.
+     */
+    public var bufferedPosition: Double {
+        return wrapper.bufferedPosition
     }
     
     /**
@@ -136,10 +127,9 @@ public class AudioPlayer: AVPlayerWrapperDelegate {
      
      - parameter infoCenter: The InfoCenter to update. Default is `MPNowPlayingInfoCenter.default()`.
      */
-    public init(avPlayer: AVPlayer = AVPlayer(),
-                nowPlayingInfoController: NowPlayingInfoController = NowPlayingInfoController(),
+    public init(nowPlayingInfoController: NowPlayingInfoControllerProtocol = NowPlayingInfoController(),
                 remoteCommandController: RemoteCommandController = RemoteCommandController()) {
-        self._wrapper = AVPlayerWrapper(avPlayer: avPlayer)
+        self._wrapper = AVPlayerWrapper()
         self.nowPlayingInfoController = nowPlayingInfoController
         self.remoteCommandController = remoteCommandController
         
@@ -156,30 +146,33 @@ public class AudioPlayer: AVPlayerWrapperDelegate {
      - parameter playWhenReady: Immediately start playback when the item is ready. Default is `true`. If you disable this you have to call play() or togglePlay() when the `state` switches to `ready`.
      */
     public func load(item: AudioItem, playWhenReady: Bool = true) throws {
-        print("Loading: \(item)")
+        let url: URL
         switch item.getSourceType() {
         case .stream:
-            if let url = URL(string: item.getSourceUrl()) {
-                wrapper.load(from: url, playWhenReady: playWhenReady)
+            if let itemUrl = URL(string: item.getSourceUrl()) {
+                url = itemUrl
             }
             else {
                 throw APError.LoadError.invalidSourceUrl(item.getSourceUrl())
             }
         case .file:
-            wrapper.load(from: URL(fileURLWithPath: item.getSourceUrl()), playWhenReady: playWhenReady)
+            url = URL(fileURLWithPath: item.getSourceUrl())
         }
         
-        if let item = item as? TimePitching {
-            wrapper.currentItem?.audioTimePitchAlgorithm = item.getPitchAlgorithmType()
-        }
-        else {
-            wrapper.currentItem?.audioTimePitchAlgorithm = audioTimePitchAlgorithm
-        }
+        wrapper.load(from: url,
+                     playWhenReady: playWhenReady,
+                     initialTime: (item as? InitialTiming)?.getInitialTime(),
+                     headers: (item as? Authorizing)?.getHeaders())
         
         self._currentItem = item
-        self.updateMetaValues(item: item)
-        setArtwork(forItem: item)
-        enableRemoteCommands(forItem: item)
+        
+        if (automaticallyUpdateNowPlayingInfo) {
+            self.loadNowPlayingMetaValues()
+        }
+        
+        if (item is RemoteCommandable) {
+            enableRemoteCommands(forItem: item)
+        }
     }
     
     /**
@@ -207,15 +200,18 @@ public class AudioPlayer: AVPlayerWrapperDelegate {
      Stop playback, resetting the player.
      */
     public func stop() {
-        AVWrapper(itemPlaybackDoneWithReason: .playerStopped)
         self.reset()
         self.wrapper.stop()
+        self.event.playbackEnd.emit(data: (reason: .playerStopped, currentItem: self.currentItem, currentTime: self.currentTime, nextItem: nil))
     }
     
     /**
      Seek to a specific time in the item.
      */
     public func seek(to seconds: TimeInterval) {
+        if automaticallyUpdateNowPlayingInfo {
+            self.updateNowPlayingCurrentTime(seconds)
+        }
         self.wrapper.seek(to: seconds)
     }
     
@@ -236,26 +232,54 @@ public class AudioPlayer: AVPlayerWrapperDelegate {
     
     // MARK: - NowPlayingInfo
     
-    /// Reload all NowPlayingInfo for the playing item.
-    public func reloadNowPlayingInfo() {
+    /**
+     Loads NowPlayingInfo-meta values with the values found in the current `AudioItem`. Use this if a change to the `AudioItem` is made and you want to update the `NowPlayingInfoController`s values.
+     
+     Reloads:
+     - Artist
+     - Title
+     - Album title
+     - Album artwork
+     */
+    public func loadNowPlayingMetaValues() {
         guard let item = currentItem else { return }
-        updateMetaValues(item: item)
-        setArtwork(forItem: item)
-        updatePlaybackValues()
-    }
-    
-    func updateMetaValues(item: AudioItem) {
-        guard automaticallyUpdateNowPlayingInfo else { return }
-
+        
         nowPlayingInfoController.set(keyValues: [
             MediaItemProperty.artist(item.getArtist()),
             MediaItemProperty.title(item.getTitle()),
             MediaItemProperty.albumTitle(item.getAlbumTitle()),
-            ])
+        ])
+        
+        loadArtwork(forItem: item)
     }
     
-    func setArtwork(forItem item: AudioItem) {
-        guard automaticallyUpdateNowPlayingInfo else { return }
+    /**
+     Resyncs the playbackvalues of the currently playing `AudioItem`.
+     
+     Will resync:
+     - Current time
+     - Duration
+     - Playback rate
+     */
+    public func updateNowPlayingPlaybackValues() {
+        updateNowPlayingDuration(duration)
+        updateNowPlayingCurrentTime(currentTime)
+        updateNowPlayingRate(rate)
+    }
+    
+    private func updateNowPlayingDuration(_ duration: Double) {
+        nowPlayingInfoController.set(keyValue: MediaItemProperty.duration(duration))
+    }
+    
+    private func updateNowPlayingRate(_ rate: Float) {
+        nowPlayingInfoController.set(keyValue: NowPlayingInfoProperty.playbackRate(Double(rate)))
+    }
+    
+    private func updateNowPlayingCurrentTime(_ currentTime: Double) {
+        nowPlayingInfoController.set(keyValue: NowPlayingInfoProperty.elapsedPlaybackTime(currentTime))
+    }
+    
+    private func loadArtwork(forItem item: AudioItem) {
         item.getArtwork { (image) in
             if let image = image {
                 let artwork = MPMediaItemArtwork(boundsSize: image.size, requestHandler: { (size) -> UIImage in
@@ -266,48 +290,70 @@ public class AudioPlayer: AVPlayerWrapperDelegate {
         }
     }
     
-    func updatePlaybackValues() {
-        guard automaticallyUpdateNowPlayingInfo else { return }
-        nowPlayingInfoController.set(keyValue: NowPlayingInfoProperty.elapsedPlaybackTime(wrapper.currentTime))
-        nowPlayingInfoController.set(keyValue: MediaItemProperty.duration(wrapper.duration))
-        nowPlayingInfoController.set(keyValue: NowPlayingInfoProperty.playbackRate(Double(wrapper.rate)))
-    }
-    
     // MARK: - Private
     
     func reset() {
         self._currentItem = nil
     }
     
+    private func setTimePitchingAlgorithmForCurrentItem() {
+        if let item = currentItem as? TimePitching {
+            wrapper.currentItem?.audioTimePitchAlgorithm = item.getPitchAlgorithmType()
+        }
+        else {
+            wrapper.currentItem?.audioTimePitchAlgorithm = audioTimePitchAlgorithm
+        }
+    }
+    
     // MARK: - AVPlayerWrapperDelegate
     
     func AVWrapper(didChangeState state: AVPlayerWrapperState) {
         switch state {
-        case .playing, .paused: updatePlaybackValues()
+        case .ready:
+            if (automaticallyUpdateNowPlayingInfo) {
+                updateNowPlayingPlaybackValues()
+            }
+            
+            setTimePitchingAlgorithmForCurrentItem()
+        case .playing, .paused:
+            if (automaticallyUpdateNowPlayingInfo) {
+                updateNowPlayingCurrentTime(currentTime)
+                updateNowPlayingRate(rate)
+            }
         default: break
         }
-        self.delegate?.audioPlayer(playerDidChangeState: state)
-    }
-    
-    func AVWrapper(itemPlaybackDoneWithReason reason: PlaybackEndedReason) {
-        self.delegate?.audioPlayer(itemPlaybackEndedWithReason: reason)
+        self.event.stateChange.emit(data: state)
     }
     
     func AVWrapper(secondsElapsed seconds: Double) {
-        self.delegate?.audioPlayer(secondsElapsed: seconds)
+        self.event.secondElapse.emit(data: seconds)
     }
     
     func AVWrapper(failedWithError error: Error?) {
-        self.delegate?.audioPlayer(failedWithError: error)
+        self.event.fail.emit(data: error)
     }
     
     func AVWrapper(seekTo seconds: Int, didFinish: Bool) {
-        self.updatePlaybackValues()
-        self.delegate?.audioPlayer(seekTo: seconds, didFinish: didFinish)
+        if !didFinish && automaticallyUpdateNowPlayingInfo {
+            updateNowPlayingCurrentTime(currentTime)
+        }
+        self.event.seek.emit(data: (seconds, didFinish))
     }
     
     func AVWrapper(didUpdateDuration duration: Double) {
-        self.delegate?.audioPlayer(didUpdateDuration: duration)
+        self.event.updateDuration.emit(data: duration)
+    }
+    
+    func AVWrapperItemDidPlayToEndTime() {
+        self.event.playbackEnd.emit(data: (reason: .playedUntilEnd, currentItem: self.currentItem, currentTime: self.currentTime, nextItem: nil))
+    }
+
+    func AVWrapperPlaybackStalled() {
+        self.event.playbackStalled.emit(data: currentItem)
+    }
+    
+    func AVWrapperDidRecreateAVPlayer() {
+        self.event.didRecreateAVPlayer.emit(data: ())
     }
     
 }

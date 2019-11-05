@@ -11,6 +11,7 @@ import AVFoundation
 
 protocol AVPlayerItemNotificationObserverDelegate: class {
     func itemDidPlayToEndTime()
+    func playbackStalled()
 }
 
 /**
@@ -35,6 +36,7 @@ class AVPlayerItemNotificationObserver {
         stopObservingCurrentItem()
         observingItem = item
         notificationCenter.addObserver(self, selector: #selector(itemDidPlayToEndTime), name: NSNotification.Name.AVPlayerItemDidPlayToEndTime, object: item)
+        notificationCenter.addObserver(self, selector: #selector(playbackStalled), name: NSNotification.Name.AVPlayerItemPlaybackStalled, object: item)
     }
     
     /**
@@ -49,6 +51,10 @@ class AVPlayerItemNotificationObserver {
     
     @objc private func itemDidPlayToEndTime() {
         delegate?.itemDidPlayToEndTime()
+    }
+
+    @objc private func playbackStalled() {
+        delegate?.playbackStalled()
     }
     
 }

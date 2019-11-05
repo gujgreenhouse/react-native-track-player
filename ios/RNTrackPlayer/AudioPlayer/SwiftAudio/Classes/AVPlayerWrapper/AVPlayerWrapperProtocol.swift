@@ -9,7 +9,7 @@ import Foundation
 import AVFoundation
 
 
-protocol AVPlayerWrapperProtocol {
+protocol AVPlayerWrapperProtocol: class {
     
     var state: AVPlayerWrapperState { get }
     
@@ -18,6 +18,8 @@ protocol AVPlayerWrapperProtocol {
     var currentTime: TimeInterval { get }
     
     var duration: TimeInterval { get }
+    
+    var bufferedPosition: TimeInterval { get }
     
     var reasonForWaitingToPlay: AVPlayer.WaitingReason? { get }
     
@@ -47,6 +49,8 @@ protocol AVPlayerWrapperProtocol {
     
     func seek(to seconds: TimeInterval)
     
-    func load(from url: URL, playWhenReady: Bool)
+    func load(from url: URL, playWhenReady: Bool, headers: [String: Any]?)
+    
+    func load(from url: URL, playWhenReady: Bool, initialTime: TimeInterval?, headers: [String: Any]?)
     
 }

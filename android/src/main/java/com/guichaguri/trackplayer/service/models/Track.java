@@ -7,11 +7,9 @@ import android.support.v4.media.MediaDescriptionCompat;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.RatingCompat;
 import android.support.v4.media.session.MediaSessionCompat.QueueItem;
-import android.util.Log;
-
-import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.extractor.DefaultExtractorsFactory;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.ProgressiveMediaSource;
 import com.google.android.exoplayer2.source.dash.DashMediaSource;
 import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
 import com.google.android.exoplayer2.source.hls.HlsMediaSource;
@@ -24,6 +22,7 @@ import com.guichaguri.trackplayer.service.player.LocalPlayback;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -51,7 +50,6 @@ public class Track {
     public String id;
     public Uri uri;
     public int resourceId;
-    public Bundle headers;
 
     public TrackType type = TrackType.DEFAULT;
 
@@ -69,6 +67,8 @@ public class Track {
     public Bundle originalItem;
 
     public RatingCompat rating;
+
+    public Map<String, String> headers;
 
     public final long queueId;
 
@@ -93,8 +93,23 @@ public class Track {
         }
 
         contentType = bundle.getString("contentType");
-        headers = Utils.getHeaders(bundle, "url");
         userAgent = bundle.getString("userAgent");
+
+        Bundle httpHeaders = bundle.getBundle("headers");
+        if(httpHeaders != null) {
+            headers = new HashMap<>();
+            for(String header : httpHeaders.keySet()) {
+                headers.put(header, httpHeaders.getString(header));
+            }
+        }
+
+        setMetadata(context, bundle, ratingType);
+
+        queueId = System.currentTimeMillis();
+        originalItem = bundle;
+    }
+
+    public void setMetadata(Context context, Bundle bundle, int ratingType) {
         artwork = Utils.getUri(context, bundle, "artwork");
 
         title = bundle.getString("title");
@@ -106,8 +121,8 @@ public class Track {
 
         rating = Utils.getRating(bundle, "rating", ratingType);
 
-        queueId = System.currentTimeMillis();
-        originalItem = bundle;
+        if (originalItem != null && originalItem != bundle)
+            originalItem.putAll(bundle);
     }
 
     public MediaMetadataCompat.Builder toMediaMetadata() {
@@ -121,7 +136,9 @@ public class Track {
         builder.putString(METADATA_KEY_MEDIA_URI, uri.toString());
         builder.putString(METADATA_KEY_MEDIA_ID, id);
 
-        builder.putLong(METADATA_KEY_DURATION, duration);
+        if (duration > 0) {
+            builder.putLong(METADATA_KEY_DURATION, duration);
+        }
 
         if (artwork != null) {
             builder.putString(METADATA_KEY_ART_URI, artwork.toString());
@@ -177,27 +194,18 @@ public class Track {
         } else {
 
             // Creates a default http source factory, enabling cross protocol redirects
-            ds = new DefaultHttpDataSourceFactory(
-                    userAgent,
-                    null,
+            DefaultHttpDataSourceFactory factory = new DefaultHttpDataSourceFactory(
+                    userAgent, null,
                     DefaultHttpDataSource.DEFAULT_CONNECT_TIMEOUT_MILLIS,
                     DefaultHttpDataSource.DEFAULT_READ_TIMEOUT_MILLIS,
                     true
             );
 
-            if (headers != null) {
-
-                for (String key : headers.keySet()) {
-                    ((DefaultHttpDataSourceFactory) ds)
-                            .getDefaultRequestProperties()
-                            .set(key, headers.get(key).toString());
-
-                }
-
+            if(headers != null) {
+                factory.getDefaultRequestProperties().set(headers);
             }
 
-
-            ds = playback.enableCaching(ds);
+            ds = playback.enableCaching(factory);
 
         }
 
@@ -212,8 +220,8 @@ public class Track {
                 return new SsMediaSource.Factory(new DefaultSsChunkSource.Factory(ds), ds)
                         .createMediaSource(uri);
             default:
-                return new ExtractorMediaSource.Factory(ds)
-                        .setExtractorsFactory(new DefaultExtractorsFactory().setConstantBitrateSeekingEnabled(true))
+                return new ProgressiveMediaSource.Factory(ds, new DefaultExtractorsFactory()
+                        .setConstantBitrateSeekingEnabled(true))
                         .createMediaSource(uri);
         }
     }
