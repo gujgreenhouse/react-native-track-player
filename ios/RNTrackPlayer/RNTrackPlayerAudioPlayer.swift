@@ -110,6 +110,13 @@ public class RNTrackPlayerAudioPlayer: QueuedAudioPlayer {
 		} 
 		super.AVWrapperItemDidPlayToEndTime()
     }
+    
+    override func AVWrapperPlaybackStalled() {
+        
+        let currentItem = queueManager.current
+        self.reactEventEmitter.sendEvent(withName: "playback-stalled",
+            body: ["track": (currentItem as? Track)?.id])
+    }
 
 	// MARK: - Remote Command Center
     

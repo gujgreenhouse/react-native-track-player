@@ -347,4 +347,7 @@ public class AudioPlayer: AVPlayerWrapperDelegate {
         self.event.didRecreateAVPlayer.emit(data: ())
     }
     
+    func AVWrapperPlaybackStalled() {
+        self.event.playbackStalled.emit(data: currentItem)
+    }
 }

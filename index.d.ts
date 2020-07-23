@@ -6,6 +6,7 @@ declare namespace RNTrackPlayer {
 
   export type EventType =
     | "playback-state"
+    | "playback-stalled"
     | "playback-error"
     | "playback-queue-ended"
     | "playback-track-ended"
