@@ -8,6 +8,7 @@ declare namespace RNTrackPlayer {
     | "playback-state"
     | "playback-error"
     | "playback-queue-ended"
+    | "playback-track-ended"
     | "playback-track-changed"
     | "playback-metadata-received"
     | "remote-play"
@@ -131,7 +132,7 @@ declare namespace RNTrackPlayer {
 
   // Control Center / Notification Metadata Commands
   export function updateOptions(options: MetadataOptions): Promise<void>;
-  export function updateMetadataForTrack(id: string, metadata: TrackMetadata) : Promise<void>;
+  export function updateMetadataForTrack(id: string, metadata: TrackMetadata): Promise<void>;
 
   // Player Playback Commands
 
@@ -203,7 +204,7 @@ declare namespace RNTrackPlayer {
   export const PITCH_ALGORITHM_LINEAR: PitchAlgorithm;
   export const PITCH_ALGORITHM_MUSIC: PitchAlgorithm;
   export const PITCH_ALGORITHM_VOICE: PitchAlgorithm;
-  
+
   export const TrackPlayerEvents: {
     REMOTE_PLAY: EventType;
     REMOTE_PLAY_ID: EventType;
