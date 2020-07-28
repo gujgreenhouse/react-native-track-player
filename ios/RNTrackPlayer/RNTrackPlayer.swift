@@ -58,6 +58,7 @@ public class RNTrackPlayer: RCTEventEmitter {
             "CAPABILITY_PLAY_FROM_ID": "NOOP",
             "CAPABILITY_PLAY_FROM_SEARCH": "NOOP",
             "CAPABILITY_PAUSE": Capability.pause.rawValue,
+            "CAPABILITY_TOGGLE_PLAY_PAUSE": Capability.togglePlayPause.rawValue,
             "CAPABILITY_STOP": Capability.stop.rawValue,
             "CAPABILITY_SEEK_TO": Capability.seek.rawValue,
             "CAPABILITY_SKIP": "NOOP",
@@ -176,6 +177,44 @@ public class RNTrackPlayer: RCTEventEmitter {
         
         
         // setup event listeners
+        player.event.stateChange.addListener(self) { [weak self] state in
+            self?.sendEvent(withName: "playback-state", body: ["state": state.rawValue])
+        }
+        
+        player.event.fail.addListener(self) { [weak self] error in
+            guard let e = error as? NSError else {
+                self?.sendEvent(withName: "playback-error", body: [
+                    "error": error?.localizedDescription,
+                    "message": error?.localizedDescription,
+                    ])
+                return
+            }
+
+            self?.sendEvent(withName: "playback-error", body: [
+                "error": e.localizedDescription,
+                "code": e.code,
+                "message": e.localizedDescription,
+                "domain": e.domain,
+            ])
+        }
+        
+        player.event.playbackEnd.addListener(self) { [weak self] reason in
+            guard let `self` = self else { return }
+
+            if reason == .playedUntilEnd && self.player.nextItems.count == 0 {
+                self.sendEvent(withName: "playback-queue-ended", body: [
+                    "track": (self.player.currentItem as? Track)?.id ?? "",
+                    "position": self.player.currentTime,
+                    ])
+            } else if reason == .playedUntilEnd {
+               self.sendEvent(withName: "playback-track-changed", body: [
+                    "track": (self.player.currentItem as? Track)?.id ?? "",
+                    "position": self.player.currentTime,
+                    "nextTrack": (self.player.nextItems.first as? Track)?.id ?? "",
+                    ])
+            }
+        }
+        
         player.remoteCommandController.handleChangePlaybackPositionCommand = { [weak self] event in
             if let event = event as? MPChangePlaybackPositionCommandEvent {
                 self?.sendEvent(withName: "remote-seek", body: ["position": event.positionTime])
@@ -258,7 +297,13 @@ public class RNTrackPlayer: RCTEventEmitter {
         hasInitialized = true
         resolve(NSNull())
     }
-    
+
+    @objc(isServiceRunning:rejecter:)
+    public func isServiceRunning(resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+        // TODO That is probably always true
+        resolve(player != nil)
+    }
+
     @objc(destroy)
     public func destroy() {
         print("Destroying player")

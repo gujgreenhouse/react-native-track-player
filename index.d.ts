@@ -121,6 +121,7 @@ declare namespace RNTrackPlayer {
 
   export function setupPlayer(options?: PlayerOptions): Promise<void>;
   export function destroy(): void;
+  export function isServiceRunning(): Promise<boolean>;
 
   // Player Queue Commands
 
@@ -190,6 +191,7 @@ declare namespace RNTrackPlayer {
   export const CAPABILITY_PLAY_FROM_ID: Capability;
   export const CAPABILITY_PLAY_FROM_SEARCH: Capability;
   export const CAPABILITY_PAUSE: Capability;
+  export const CAPABILITY_TOGGLE_PLAY_PAUSE: Capability;
   export const CAPABILITY_STOP: Capability;
   export const CAPABILITY_SEEK_TO: Capability;
   export const CAPABILITY_SKIP: Capability;
