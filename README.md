@@ -1,3 +1,21 @@
+## Mission-Me Fork
+We forked the player since we needed to add some custom code for our needs.
+We favored a fork over a patch with `patch-package` since we feel that we have more control and transparency (with commits) over the code changes.
+
+### The Motivation behind the code changes
+- **Track-Ended Events**: To close the player when a unit finishes and to show an ask-to-review alert
+- **Playback-Stalled Events**: To close the player when the loading is stalled. I couldn't find the motivation behind this.
+- **Background Crash Bugfix**: There background crash rate of the player was very high and according to this post, there is a [fork](https://github.com/react-native-kit/react-native-track-player/issues/473#issuecomment-527936277) that fixes this problem. More details in this [ticket](https://github.com/gujgreenhouse/fasten_app/issues/590)
+- (***Legacy***) **Authorization**: We used to send a special auth token when loading a track. We tested the app without this adoptions and locked content seems to load fine. Obviously with the new version this is not needed anymore or AWS changed something on their side. This is currently not entirely clear.
+
+### The creation of this fork
+- The Fork (`mission-me-2` branch) is based on the `dev` branch of the [origin repository](https://github.com/react-native-kit/react-native-track-player). 
+- On this branch are 2 commits applied which add the `track-ended` and `playback-stalled` events. 
+- Additionally there is 1 commit that is a squashed merge commit from the [bugfix branch](https://github.com/perushevandkhmelev-agency/react-native-track-player/commits/edge-2). We squashed the merge so that there is just 1 commit for transparency reasons.
+
+Below this line starts the original readme:
+
+
 [![downloads](https://img.shields.io/npm/dw/react-native-track-player.svg)](https://www.npmjs.com/package/react-native-track-player)
 [![npm](https://img.shields.io/npm/v/react-native-track-player.svg)](https://www.npmjs.com/package/react-native-track-player) 
 [![discord](https://img.shields.io/discord/567636850513018880.svg)](https://discordapp.com/invite/ya2XDCR)
